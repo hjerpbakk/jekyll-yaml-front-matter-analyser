@@ -103,12 +103,17 @@ struct FrontMatter {
     public string meta_description { get; set; }
     public DateTime date { get; set; }
     public string image { get; set; }
+    public string link { get; set; }
 
     public List<string> Verify(Tag[] availableTags, string rootPath) {
         var errors = new List<string>();
         // categories
-        if (categories == null || categories.Count != 1 || categories[0] != "blog") {
+        if (categories == null || categories.Count == 0 || !categories.Contains("blog")) {
             errors.Add("categories must contain the value: blog");
+        } else if (categories.Contains("link")) {
+            if (string.IsNullOrEmpty(link)) {
+                errors.Add("When categories contains \"link\", a valid link item is needed");
+            }
         }
 
         // layout
