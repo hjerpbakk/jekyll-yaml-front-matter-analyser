@@ -169,7 +169,7 @@ struct FrontMatter {
         } else {
             foreach (var tag in tags) {
                 if (!availableTags.Any(t => t.slug == tag)) {
-                    errors.Add($"Could not find tag: {tag}");
+                    errors.Add(string.Format(Errors.TA0002, tag));
                 }
             }
         }      
@@ -203,5 +203,5 @@ struct Errors {
     public const string IM0002 = "\"image\" did not exist on disk (" + nameof(IM0002) + ")";
 
     public const string TA0001 = "Post must have at least one tag (" + nameof(TA0001) + ")";
-    public const string TA0002 = "\"image\" did not exist on disk (" + nameof(TA0002) + ")";
+    public const string TA0002 = "Could not find tag {0} in available tags (" + nameof(TA0002) + ")";
 }
