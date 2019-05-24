@@ -114,6 +114,7 @@ struct FrontMatter {
     public DateTime date { get; set; }
     public string image { get; set; }
     public string link { get; set; }
+    public List<string> ignore { get; set; }
 
     public List<string> Verify(Tag[] availableTags, string rootPath) {
         var errors = new List<string>();
@@ -174,6 +175,18 @@ struct FrontMatter {
             }
         }      
         
+        if (ignore != null) {
+            foreach (var ruleToIgnore in ignore) {
+                for (int i = 0; i < errors.Count; i++) {
+                    string error = errors[i];
+                    if (error.Contains(ruleToIgnore)) {
+                        errors.Remove(error);
+                        i--;
+                    }
+                }
+            }
+        }
+        
         return errors;
     }
 }
@@ -191,7 +204,7 @@ struct Errors {
     public const string LA0001 = "\"layout\" must have the value: post (" + nameof(LA0001) + ")";
 
     public const string TI0001 = "\"title\" is missing (" + nameof(TI0001) + ")";
-    public const string TI0002 = "\title\" cannot contain: TODO (" + nameof(TI0002) + ")";
+    public const string TI0002 = "\"title\" cannot contain: TODO (" + nameof(TI0002) + ")";
 
     public const string DE0001 = "\"meta_description\" is missing (" + nameof(DE0001) + ")";
     public const string DE0002 = "\"meta_description\" cannot contain: TODO (" + nameof(DE0002) + ")";
