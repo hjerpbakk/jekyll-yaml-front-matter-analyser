@@ -5,7 +5,7 @@ using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 if (Args.Count != 1) {
-    Console.WriteLine("Please provide the location of a Jekyll repository as an argument. Example: dotnet script main.csx -- path");
+    Console.WriteLine("Please provide the location of a Jekyll repository as an argument. Example: dotnet script main.csx -- [path_to_root_jekyll_folder]");
     return;
 }
 
@@ -31,7 +31,7 @@ foreach (var post in posts) {
     if (whitelistedFiles.Contains(postFilename)) {
         continue;
     }
-    
+
     try {
         var frontMatterText = GetFrontMatterFromPost(post);
         var frontMatter = ParseFrontMatter(frontMatterText);
@@ -119,53 +119,53 @@ struct FrontMatter {
         var errors = new List<string>();
         // categories
         if (categories == null || categories.Count == 0 || !categories.Contains("blog")) {
-            errors.Add("categories must contain the value: blog");
+            errors.Add(Errors.CA0001);
         } else if (categories.Contains("link")) {
             if (string.IsNullOrEmpty(link)) {
-                errors.Add("When categories contains \"link\", a valid link item is needed");
+                errors.Add(Errors.CA0002);
             }
         }
 
         // layout
         if (string.IsNullOrEmpty(layout) || layout != "post") {
-            errors.Add("layout must have the value: post");
+            errors.Add(Errors.LA0001);
         }
 
         // title
         if (string.IsNullOrEmpty(title)) {
-            errors.Add("title is missing");
+            errors.Add(Errors.TI0001);
         } else if (title.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
-            errors.Add("title cannot contain TODO");
+            errors.Add(Errors.TI0002);
         }
 
         // meta_description
         if (string.IsNullOrEmpty(meta_description)) {
-            errors.Add("meta_description is missing");
+            errors.Add(Errors.DE0001);
         } else if (meta_description.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
-            errors.Add("meta_description cannot contain TODO");
+            errors.Add(Errors.DE0002);
         }
 
         // date
         if (date == DateTime.MinValue) {
-            errors.Add("date must be specified");
+            errors.Add(Errors.DA0001);
         } else if (date > DateTime.Now) {
-            errors.Add("date was in the future");
+            errors.Add(Errors.DA0002);
         }
 
         // image
         if (string.IsNullOrEmpty(image)) {
-            errors.Add("image is missing");
+            errors.Add(Errors.IM0001);
         } else {
             var imagePathPart = image.Remove(0, 1);
             var imagePath = Path.GetFullPath(Path.Combine(rootPath, imagePathPart));
             if (!File.Exists(imagePath)) {
-                errors.Add("image did not exist on disk");
+                errors.Add(Errors.IM0002);
             }
         }
 
         // tags
         if (tags == null || tags.Count == 0) {
-            errors.Add("Post must have at least one tag");
+            errors.Add(Errors.TA0001);
         } else {
             foreach (var tag in tags) {
                 if (!availableTags.Any(t => t.slug == tag)) {
@@ -182,4 +182,26 @@ struct Tag {
     public string slug { get; set; }
     public string title { get; set; }
     public string hash_tag { get; set; }
+}
+
+struct Errors {
+    public const string CA0001 = "\"categories\" must contain the value: blog (" + nameof(CA0001) + ")";
+    public const string CA0002 = "When \"categories\" contains \"link\", a \"link\" with an url must exist in the front matter (" + nameof(CA0002) + ")";
+
+    public const string LA0001 = "\"layout\" must have the value: post (" + nameof(LA0001) + ")";
+
+    public const string TI0001 = "\"title\" is missing (" + nameof(TI0001) + ")";
+    public const string TI0002 = "\title\" cannot contain: TODO (" + nameof(TI0002) + ")";
+
+    public const string DE0001 = "\"meta_description\" is missing (" + nameof(DE0001) + ")";
+    public const string DE0002 = "\"meta_description\" cannot contain: TODO (" + nameof(DE0002) + ")";
+
+    public const string DA0001 = "\"date\" is missing (" + nameof(DA0001) + ")";
+    public const string DA0002 = "\"date\" was in the future (" + nameof(DA0002) + ")";
+
+    public const string IM0001 = "\"image\" is missing (" + nameof(IM0001) + ")";
+    public const string IM0002 = "\"image\" did not exist on disk (" + nameof(IM0002) + ")";
+
+    public const string TA0001 = "Post must have at least one tag (" + nameof(TA0001) + ")";
+    public const string TA0002 = "\"image\" did not exist on disk (" + nameof(TA0002) + ")";
 }

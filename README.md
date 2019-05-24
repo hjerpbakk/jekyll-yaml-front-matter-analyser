@@ -5,7 +5,7 @@ Analyses Jekyll YAML front matter and reports errors and omissions.
 ## Usage
 
 ```shell
-dotnet script main.csx -- [root_jekyll_folder]
+dotnet script main.csx -- [path_to_root_jekyll_folder]
 ```
 
 ## Configuration
