@@ -9,6 +9,12 @@ if (Args.Count != 1) {
     return;
 }
 
+var whitelistedFiles = new string[0];
+var whitelistPath = Path.Combine(Args[0], ".frontmatterignore");
+if (File.Exists(whitelistPath)) {
+    whitelistedFiles = File.ReadAllLines(whitelistPath);
+}
+
 var postPath = Path.GetFullPath(Path.Combine(Args[0], "_posts"));
 var posts = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(postPath, g)).ToArray();
 if (posts.Length == 0) {
@@ -22,6 +28,10 @@ var verificationResults = new Dictionary<string, List<string>>();
 
 foreach (var post in posts) {
     var postFilename = Path.GetFileName(post);
+    if (whitelistedFiles.Contains(postFilename)) {
+        continue;
+    }
+    
     try {
         var frontMatterText = GetFrontMatterFromPost(post);
         var frontMatter = ParseFrontMatter(frontMatterText);
