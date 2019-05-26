@@ -4,8 +4,16 @@ Analyses Jekyll YAML front matter and reports errors and omissions.
 
 ## Usage
 
+If dotnet script is installed on your local machine:
+
 ```shell
 dotnet script main.csx -- [path_to_root_jekyll_folder]
+```
+
+Using Docker, navigate to your root Jekyll folder and run this command in the Terminal:
+
+```shell
+docker run --rm -it --volume="$PWD:/scripts:ro" hjerpbakk/jekyll-front-matter-analyser
 ```
 
 ## Configuration
