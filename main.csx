@@ -59,7 +59,7 @@ foreach (var verificationResult in verificationResults) {
 
 Console.ForegroundColor = defaultColor;
 if (numberOfErrors > 0) {
-    Console.WriteLine($"Found {numberOfErrors} errors 🤨");
+    Console.WriteLine($"{Environment.NewLine}Found {numberOfErrors} errors 🤨");
     return 1;
 } else {
     Console.WriteLine("No errors 😃");

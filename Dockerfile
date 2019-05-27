@@ -1,5 +1,5 @@
 FROM hjerpbakk/dotnet-script
 
-COPY ./main.csx .
+COPY ./main.csx /
 
-ENTRYPOINT ["dotnet-script", "main.csx", "--", "/scripts"]
+ENTRYPOINT ["dotnet-script", "../main.csx", "--", "/scripts"]
