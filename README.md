@@ -1,33 +1,108 @@
 # jekyll-yaml-front-matter-analyser
 
-Analyses Jekyll YAML front matter and reports errors and omissions.
+[My blog](https://hjerpbakk.com) is built using the excellent static site generator [Jekyll][1]. I write my posts in [Markdown][2] with a [YAML][3] front matter block that tells Jekyll these files should be processed according to the values specified. It works great but has one drawback.
+
+What if you specify invalid values? Jekyll doesn't care so long as the values are of the type expected by the variable. The result might not be would you'd like, but Jekyll will bravely try to build most of what you throw at it and you'll need to visually inspect the site or the source to find errors. As a software engineer, this is no good. I need to fail fast, and if compilation does succeed, the resulting artifacts need to be verified by tests.
+
+Enter this project.
+
+## Example
+
+Given the following front matter:
+
+```yaml
+---
+categories:
+- blog
+layout: post
+title: Jekyll YAML front matter validator
+meta_description:
+image: /img/
+date: 2019-07-08T12:00:00.0000000+00:00
+tags:
+- jekyll
+- dotnet
+- dotnet-script
+- docker
+---
+```
+
+My validator will report the following errors:
+
+![Validation result](https://hjerpbakk.com/img/jekyll-yaml-front-matter-validator/jekyll-yaml-front-matter-validator.png)
+
+- `meta_description` is empty.
+- `image` contains an incomplete path that will not exist on the published site.
+- For this example, the `date` was also set in the future and Jekyll would not have generated the post to be published.
 
 ## Usage
 
-If dotnet script is installed on your local machine:
+### Running through dotnet-script
 
-```shell
+If [dotnet-script][6] is installed on your local machine, download the script and run it thusly:
+
+```bash
 dotnet script main.csx -- [path_to_root_jekyll_folder]
 ```
 
+Where `[path_to_root_jekyll_folder]` is the path to the root Jekyll folder. The script will look for posts in the `_posts` subfolder.
+
+### Running using Docker
+
 Using Docker, navigate to your root Jekyll folder and run this command in the Terminal:
 
-```shell
+```bash
+docker run --rm -it --volume="$PWD:/scripts:ro" hjerpbakk/jekyll-front-matter-analyser
+```
+
+The image can be found on [Docker Hub][7].
+
+### Continuous integration
+
+I run the validator as part of this blog's CI pipeline using [CircleCI][8]. CircleCI is configured using a `.circleci/config.yml`:
+
+```yaml
+version: 2
+jobs:
+  build:
+    machine: true
+    steps:
+      - checkout
+      - run: chmod +x ./test.sh
+      - run: ./test.sh
+```
+
+Where the `test.sh` Bash script contains:
+
+```bash
+#!/usr/bin/env bash
+set -e
+
+docker pull hjerpbakk/jekyll-front-matter-analyser
 docker run --rm -it --volume="$PWD:/scripts:ro" hjerpbakk/jekyll-front-matter-analyser
 ```
 
 ## Configuration
 
+You can configure the validator by either whitelisting specific files or ignore specific rules for a single file.
+
 ### Whitelist files
 
-1. Add an empty text file named `.frontmatterignore` to your root Jekyll folder
-2. Add filenames to be ignored during analysis separated by newlines 
+1. Add an empty text file named `.frontmatterignore` to your root Jekyll folder.
+2. Add filenames to be ignored during analysis separated by newlines.
 
-### Ignore specific rules for a given post
+The following `.frontmatterignore` will ignore the posts `2014-1-16-os-x-script-for-fetching-app-store-icons.html` and `2018-06-29-beautiful-code-fira-code.md` during analysis:
+
+```text
+2014-1-16-os-x-script-for-fetching-app-store-icons.html
+2018-06-29-beautiful-code-fira-code.md
+```
+
+### Ignore specific rules for a single file
 
 To ignore specific rules for a given post, create an `ignore` list in the front matter of the post:
 
-```yml
+```yaml
 ---
 ignore:
 - IM0001
@@ -35,34 +110,51 @@ ignore:
 ---
 ```
 
-Where `IM0001` and `TA0001` are validation errors. 
+Where `IM0001` and `TA0001` are validation errors. See below for a complete list.
 
-#### Validation errors
-The available errors are:
+## Validation rules
 
-##### Categories
-- **CA0001** "categories" must contain the value: blog
-- **CA0002** When "categories" contains "link", a "link" with an url must exist in the front matter
+The available rules are:
 
-##### Layout
-- **LA0001** "layout" must have the value: post
+### Categories
 
-##### Title
+- **CA0001** "categories" must contain the value: `blog`
+- **CA0002** When "categories" contains `link`, a `link` with an URL must exist in the front matter
+
+#### Layout
+
+- **LA0001** "layout" must have the value: `post`
+
+#### Title
+
 - **TI0001** "title" is missing
-- **TI0002** "title" cannot contain: TODO
+- **TI0002** "title" cannot contain: `TODO`
 
-##### Description
+#### Description
+
 - **DE0001** "meta_description" is missing
-- **DE0002** "meta_description" cannot contain: TODO
+- **DE0002** "meta_description" cannot contain: `TODO`
 
-##### Date
+#### Date
+
 - **DA0001** "date" is missing
-- **DA0002** "date" was in the future
+- **DA0002** "date" is in the future
 
-##### Image
+#### Image
+
 - **IM0001** "image" is missing
-- **IM0002** "image" did not exist on disk
+- **IM0002** "image" does not exist on disk
 
-##### Tags
+#### Tags
+
 - **TA0001** Post must have at least one tag
-- **TA0002** Could not find tag in available tags
+- **TA0002** Could not find the tag in the subfolder `_my_tags`
+
+[1]: https://jekyllrb.com "Jekyll"
+[2]: https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Markdown"
+[3]: https://yaml.org "YAML"
+[4]: https://github.com/Sankra/jekyll-yaml-front-matter-analyser "Jekyll YAML front matter validator source"
+[5]: https://github.com/Sankra/jekyll-yaml-front-matter-analyser "Jekyll YAML front matter validator"
+[6]: https://github.com/filipw/dotnet-script "dotnet-script"
+[7]: https://hub.docker.com/r/hjerpbakk/jekyll-front-matter-analyser "Docker Hub"
+[8]: https://circleci.com/ "CircleCI"
