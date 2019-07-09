@@ -1,6 +1,6 @@
 # Jekyll YAML front matter validator
 
-![Docker Pulls](https://img.shields.io/docker/pulls/hjerpbakk/jekyll-front-matter-analyser.svg?style=popout)
+[![Docker Pulls](https://img.shields.io/docker/pulls/hjerpbakk/jekyll-front-matter-analyser.svg?style=popout)](https://hub.docker.com/r/hjerpbakk/jekyll-front-matter-analyser)
 
 [My blog](https://hjerpbakk.com) is built using the excellent static site generator [Jekyll][1]. I write my posts in [Markdown][2] with a [YAML][3] front matter block that tells Jekyll these files should be processed according to the values specified. It works great but has one drawback.
 
