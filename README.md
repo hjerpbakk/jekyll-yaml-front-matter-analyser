@@ -1,5 +1,7 @@
 # Jekyll YAML front matter validator
 
+![Docker Pulls](https://img.shields.io/docker/pulls/hjerpbakk/jekyll-front-matter-analyser.svg?style=popout)
+
 [My blog](https://hjerpbakk.com) is built using the excellent static site generator [Jekyll][1]. I write my posts in [Markdown][2] with a [YAML][3] front matter block that tells Jekyll these files should be processed according to the values specified. It works great but has one drawback.
 
 What if you specify invalid values? Jekyll doesn't care so long as the values are of the type expected by the variable. The result might not be would you'd like, but Jekyll will bravely try to build most of what you throw at it and you'll need to visually inspect the site or the source to find errors. As a software engineer, this is no good. I need to fail fast, and if compilation does succeed, the resulting artifacts need to be verified by tests.
