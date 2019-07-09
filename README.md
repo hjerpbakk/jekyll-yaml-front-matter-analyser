@@ -59,7 +59,7 @@ The image can be found on [Docker Hub][7].
 
 ### Continuous integration
 
-I run the validator as part of this blog's CI pipeline using [CircleCI][8]. CircleCI is configured using a `.circleci/config.yml`:
+I run the validator as part of [my blog's](https://hjerpbakk.com) CI pipeline using [CircleCI][8]. CircleCI is configured using a `.circleci/config.yml`:
 
 ```yaml
 version: 2
