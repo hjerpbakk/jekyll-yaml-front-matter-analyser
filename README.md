@@ -29,7 +29,7 @@ tags:
 
 My validator will report the following errors:
 
-![Validation result](https://hjerpbakk.com/img/jekyll-yaml-front-matter-validator/jekyll-yaml-front-matter-validator.png)
+<img width="682" alt="Validation result" src="https://hjerpbakk.com/img/jekyll-yaml-front-matter-validator/jekyll-yaml-front-matter-validator.png">
 
 - `meta_description` is empty.
 - `image` contains an incomplete path that will not exist on the published site.
