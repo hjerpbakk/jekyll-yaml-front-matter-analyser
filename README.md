@@ -1,4 +1,4 @@
-# jekyll-yaml-front-matter-analyser
+# Jekyll YAML front matter validator
 
 [My blog](https://hjerpbakk.com) is built using the excellent static site generator [Jekyll][1]. I write my posts in [Markdown][2] with a [YAML][3] front matter block that tells Jekyll these files should be processed according to the values specified. It works great but has one drawback.
 
