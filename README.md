@@ -123,34 +123,36 @@ The available rules are:
 - **CA0001** "categories" must contain the value: `blog`
 - **CA0002** When "categories" contains `link`, a `link` with an URL must exist in the front matter
 
-#### Layout
+#### Date
 
-- **LA0001** "layout" must have the value: `post`
-
-#### Title
-
-- **TI0001** "title" is missing
-- **TI0002** "title" cannot contain: `TODO`
+- **DA0001** "date" is missing
+- **DA0002** "date" is in the future
+- **DA0003** "last_modified_at" is in the future
+- **DA0004** "last_modified_at" in `index.html` or `archives.html` is not the same as "last_modified_at" or "date" in the newest post
 
 #### Description
 
 - **DE0001** "meta_description" is missing
 - **DE0002** "meta_description" cannot contain: `TODO`
 
-#### Date
-
-- **DA0001** "date" is missing
-- **DA0002** "date" is in the future
-
 #### Image
 
 - **IM0001** "image" is missing
 - **IM0002** "image" does not exist on disk
 
+#### Layout
+
+- **LA0001** "layout" must have the value: `post`
+
 #### Tags
 
 - **TA0001** Post must have at least one tag
 - **TA0002** Could not find the tag in the subfolder `_my_tags`
+
+#### Title
+
+- **TI0001** "title" is missing
+- **TI0002** "title" cannot contain: `TODO`
 
 [1]: https://jekyllrb.com "Jekyll"
 [2]: https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Markdown"

@@ -1,5 +1,5 @@
 #!/usr/bin/env dotnet-script
-#r "nuget: YamlDotNet, 6.0.0"
+#r "nuget: YamlDotNet, 6.1.1"
 
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -26,6 +26,7 @@ var tags = GetAvailableTags();
 Console.WriteLine($"Analysing posts...{Environment.NewLine}");
 var verificationResults = new Dictionary<string, List<string>>();
 
+(string postFilename, FrontMatter frontMatter, DateTime lastModified) newestPost = (null, null, DateTime.MinValue);
 foreach (var post in posts) {
     var postFilename = Path.GetFileName(post);
     if (whitelistedFiles.Contains(postFilename)) {
@@ -33,12 +34,23 @@ foreach (var post in posts) {
     }
 
     try {
-        var frontMatterText = GetFrontMatterFromPost(post);
-        var frontMatter = ParseFrontMatter(frontMatterText);
+        var frontMatter = FrontMatter.Parse(post);
+        var lastModified = frontMatter.last_modified_at.HasValue && frontMatter.last_modified_at.Value  > frontMatter.date ? frontMatter.last_modified_at.Value : frontMatter.date;
+        if (lastModified > newestPost.lastModified) {
+            newestPost = (postFilename, frontMatter, lastModified);
+        }
+
         verificationResults.Add(postFilename, frontMatter.Verify(tags, Args[0]));
     } catch (Exception exception) {
         verificationResults.Add(postFilename, new List<string>() { exception.Message });  
     }
+}
+
+var lastModifiedErrors = newestPost.frontMatter.Verify(newestPost.lastModified, Args[0]);
+if (verificationResults.ContainsKey(newestPost.postFilename)) {
+    verificationResults[newestPost.postFilename].AddRange(lastModifiedErrors);
+} else {
+    verificationResults.Add(newestPost.postFilename, lastModifiedErrors);
 }
 
 var numberOfErrors = 0;
@@ -66,27 +78,6 @@ if (numberOfErrors > 0) {
     return 0;
 }
 
-string GetFrontMatterFromPost(string postPath) {
-    var fullText = File.ReadAllText(postPath);
-    var indexOfFirstLineBreak = fullText.IndexOf('\n');
-    var indexOfFrontMatterEnd = fullText.IndexOf("---\n", indexOfFirstLineBreak, StringComparison.InvariantCulture);
-    if (indexOfFrontMatterEnd == -1) {
-        return null;
-    }
-
-    var frontMatterEnd = indexOfFrontMatterEnd + 3;
-    var frontMatterText = fullText.Substring(0, frontMatterEnd).Trim('-');
-    return frontMatterText;
-}
-
-FrontMatter ParseFrontMatter(string frontMatterText) {
-    var deserializer = new DeserializerBuilder()
-        .WithNamingConvention(new UnderscoredNamingConvention())
-        .IgnoreUnmatchedProperties()
-        .Build();
-    return deserializer.Deserialize<FrontMatter>(frontMatterText);
-}
-
 Tag[] GetAvailableTags() {
     var tagsPath = Path.GetFullPath(Path.Combine(Args[0], "_my_tags"));
     var availableTags = Directory.EnumerateFileSystemEntries(tagsPath)
@@ -105,16 +96,66 @@ Tag ParseTag(string tagText) {
     return deserializer.Deserialize<Tag>(tagText);
 }
 
-struct FrontMatter {
+sealed class FrontMatter {
     public string title { get; set; }
     public List<string> tags { get; set; }
     public List<string> categories { get;set; }
     public string layout { get; set; }
     public string meta_description { get; set; }
     public DateTime date { get; set; }
+    public DateTime? last_modified_at { get; set; }
     public string image { get; set; }
     public string link { get; set; }
     public List<string> ignore { get; set; }
+
+    public static FrontMatter Parse(string postPath) {
+        var frontMatterText = GetFrontMatterFromPost();
+        var deserializer = new DeserializerBuilder()
+            .WithNamingConvention(new UnderscoredNamingConvention())
+            .IgnoreUnmatchedProperties()
+            .Build();
+        var frontMatter = deserializer.Deserialize<FrontMatter>(frontMatterText);
+        if (frontMatter.ignore == null) {
+            frontMatter.ignore = new List<string>();
+        }
+
+        return frontMatter;
+
+        string GetFrontMatterFromPost() {
+            var fullText = File.ReadAllText(postPath);
+            var indexOfFirstLineBreak = fullText.IndexOf('\n');
+            var indexOfFrontMatterEnd = fullText.IndexOf("---\n", indexOfFirstLineBreak, StringComparison.InvariantCulture);
+            if (indexOfFrontMatterEnd == -1) {
+                return null;
+            }
+
+            var frontMatterEnd = indexOfFrontMatterEnd + 3;
+            var frontMatterText = fullText.Substring(0, frontMatterEnd).Trim('-');
+            return frontMatterText;
+        }
+    }
+
+    public List<string> Verify(DateTime lastModified, string rootPath) {
+        var errors = new List<string>();
+        var files = new [] { "index.html", "archives.html" };
+        foreach (var file in files) {
+            var filePath = Path.Combine(rootPath, file);
+            if (!File.Exists(filePath)) {
+                continue;
+            }
+
+            var frontMatter = Parse(filePath);
+            if (frontMatter.ignore.Contains(nameof(Errors.DA0004))) {
+                continue;
+            }
+
+            if (frontMatter.last_modified_at != lastModified) {
+                errors.Add(string.Format(Errors.DA0004, file));
+            }
+        }
+
+        return errors;
+    }
 
     public List<string> Verify(Tag[] availableTags, string rootPath) {
         var errors = new List<string>();
@@ -147,10 +188,13 @@ struct FrontMatter {
         }
 
         // date
+        var now = DateTime.Now;
         if (date == DateTime.MinValue) {
             errors.Add(Errors.DA0001);
-        } else if (date > DateTime.Now) {
+        } else if (date > now) {
             errors.Add(Errors.DA0002);
+        } else if (last_modified_at > now) {
+            errors.Add(Errors.DA0003);
         }
 
         // image
@@ -175,7 +219,7 @@ struct FrontMatter {
             }
         }      
         
-        if (ignore != null) {
+        if (ignore.Count > 0) {
             foreach (var ruleToIgnore in ignore) {
                 for (int i = 0; i < errors.Count; i++) {
                     string error = errors[i];
@@ -197,24 +241,71 @@ struct Tag {
     public string hash_tag { get; set; }
 }
 
-struct Errors {
+static class Errors {
+    /// <summary>
+    /// "categories" must contain the value: `blog`
+    /// </summary>
     public const string CA0001 = "\"categories\" must contain the value: blog (" + nameof(CA0001) + ")";
+    /// <summary>
+    /// When "categories" contains `link`, a `link` with an URL must exist in the front matter
+    /// </summary>
     public const string CA0002 = "When \"categories\" contains \"link\", a \"link\" with an url must exist in the front matter (" + nameof(CA0002) + ")";
-
-    public const string LA0001 = "\"layout\" must have the value: post (" + nameof(LA0001) + ")";
-
-    public const string TI0001 = "\"title\" is missing (" + nameof(TI0001) + ")";
-    public const string TI0002 = "\"title\" cannot contain: TODO (" + nameof(TI0002) + ")";
-
-    public const string DE0001 = "\"meta_description\" is missing (" + nameof(DE0001) + ")";
-    public const string DE0002 = "\"meta_description\" cannot contain: TODO (" + nameof(DE0002) + ")";
-
+    
+    /// <summary>
+    /// "date" is missing
+    /// </summary>
     public const string DA0001 = "\"date\" is missing (" + nameof(DA0001) + ")";
-    public const string DA0002 = "\"date\" was in the future (" + nameof(DA0002) + ")";
-
+    /// <summary>
+    /// "date" is in the future
+    /// </summary>
+    public const string DA0002 = "\"date\" is in the future (" + nameof(DA0002) + ")";
+    /// <summary>
+    /// "last_modified_at" is in the future
+    /// </summary>
+    public const string DA0003 = "\"last_modified_at\" is in the future (" + nameof(DA0003) + ")";
+    /// <summary>
+    /// "last_modified_at" in `index.html` or `archives.html` is not the same as "last_modified_at" or "date" in the newest post
+    /// </summary>
+    public const string DA0004 = "This is the newest post and \"last_modified_at\" in {0} is not the same as \"last_modified_at\" or \"date\" (" + nameof(DA0004) + ")";
+    
+    /// <summary>
+    /// "meta_description" is missing
+    /// </summary>
+    public const string DE0001 = "\"meta_description\" is missing (" + nameof(DE0001) + ")";
+    /// <summary>
+    /// "meta_description" cannot contain: `TODO`
+    /// </summary>
+    public const string DE0002 = "\"meta_description\" cannot contain: TODO (" + nameof(DE0002) + ")";
+    
+    /// <summary>
+    /// "image" is missing
+    /// </summary>
     public const string IM0001 = "\"image\" is missing (" + nameof(IM0001) + ")";
-    public const string IM0002 = "\"image\" did not exist on disk (" + nameof(IM0002) + ")";
-
+    /// <summary>
+    /// "image" does not exist on disk
+    /// </summary>
+    public const string IM0002 = "\"image\" does not exist on disk (" + nameof(IM0002) + ")";
+    
+    /// <summary>
+    /// "layout" must have the value: `post`
+    /// </summary>
+    public const string LA0001 = "\"layout\" must have the value: post (" + nameof(LA0001) + ")";
+    
+    /// <summary>
+    /// Post must have at least one tag
+    /// </summary>
     public const string TA0001 = "Post must have at least one tag (" + nameof(TA0001) + ")";
-    public const string TA0002 = "Could not find tag {0} in available tags (" + nameof(TA0002) + ")";
+    /// <summary>
+    /// Could not find the tag in available tags from the subfolder `_my_tags`
+    /// </summary>
+    public const string TA0002 = "Could not find tag {0} in available tags from the subfolder `_my_tags` (" + nameof(TA0002) + ")";
+    
+    /// <summary>
+    /// "title" is missing
+    /// </summary>
+    public const string TI0001 = "\"title\" is missing (" + nameof(TI0001) + ")";
+    /// <summary>
+    /// "title" cannot contain: `TODO`
+    /// </summary>
+    public const string TI0002 = "\"title\" cannot contain: TODO (" + nameof(TI0002) + ")";
 }
