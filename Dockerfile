@@ -1,4 +1,4 @@
-FROM hjerpbakk/dotnet-script
+FROM hjerpbakk/dotnet-script:latest
 
 COPY ./main.csx /
 

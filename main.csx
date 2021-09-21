@@ -1,5 +1,5 @@
 #!/usr/bin/env dotnet-script
-#r "nuget: YamlDotNet, 6.1.1"
+#r "nuget: YamlDotNet, 11.2.1"
 
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -88,7 +88,7 @@ Tag[] GetAvailableTags() {
 
 Tag ParseTag(string tagText) {
     var deserializer = new DeserializerBuilder()
-        .WithNamingConvention(new UnderscoredNamingConvention())
+        .WithNamingConvention(UnderscoredNamingConvention.Instance)
         .IgnoreUnmatchedProperties()
         .Build();
 
@@ -111,7 +111,7 @@ sealed class FrontMatter {
     public static FrontMatter Parse(string postPath) {
         var frontMatterText = GetFrontMatterFromPost();
         var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(new UnderscoredNamingConvention())
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
             .Build();
         var frontMatter = deserializer.Deserialize<FrontMatter>(frontMatterText);
