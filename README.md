@@ -134,6 +134,7 @@ The available rules are:
 
 - **DE0001** "meta_description" is missing
 - **DE0002** "meta_description" cannot contain: `TODO`
+- **DE0003** "meta_description" must be between 25 and 160 characters of length
 
 ### Image
 
