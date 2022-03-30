@@ -96,17 +96,17 @@ Tag ParseTag(string tagText) {
     return deserializer.Deserialize<Tag>(tagText);
 }
 
-sealed class FrontMatter {
-    public string title { get; set; }
-    public List<string> tags { get; set; }
-    public List<string> categories { get;set; }
-    public string layout { get; set; }
-    public string meta_description { get; set; }
-    public DateTime date { get; set; }
-    public DateTime? last_modified_at { get; set; }
-    public string image { get; set; }
-    public string link { get; set; }
-    public List<string> ignore { get; set; }
+sealed record FrontMatter {
+    public string title { get; init; }
+    public List<string> tags { get; init; }
+    public List<string> categories { get; init; }
+    public string layout { get; init; }
+    public string meta_description { get; init; }
+    public DateTime date { get; init; }
+    public DateTime? last_modified_at { get; init; }
+    public string image { get; init; }
+    public string link { get; init; }
+    public List<string> ignore { get; init; } = new List<string>();
 
     public static FrontMatter Parse(string postPath) {
         var frontMatterText = GetFrontMatterFromPost();
@@ -115,10 +115,6 @@ sealed class FrontMatter {
             .IgnoreUnmatchedProperties()
             .Build();
         var frontMatter = deserializer.Deserialize<FrontMatter>(frontMatterText);
-        if (frontMatter.ignore == null) {
-            frontMatter.ignore = new List<string>();
-        }
-
         return frontMatter;
 
         string GetFrontMatterFromPost() {
@@ -185,6 +181,8 @@ sealed class FrontMatter {
             errors.Add(Errors.DE0001);
         } else if (meta_description.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
             errors.Add(Errors.DE0002);
+        } else if (meta_description.Length < 25 || meta_description.Length > 160) {
+            errors.Add(Errors.DE0003);
         }
 
         // date
@@ -235,11 +233,7 @@ sealed class FrontMatter {
     }
 }
 
-struct Tag {
-    public string slug { get; set; }
-    public string title { get; set; }
-    public string hash_tag { get; set; }
-}
+record struct Tag(string slug, string title, string hash_tag);
 
 static class Errors {
     /// <summary>
@@ -276,6 +270,10 @@ static class Errors {
     /// "meta_description" cannot contain: `TODO`
     /// </summary>
     public const string DE0002 = "\"meta_description\" cannot contain: TODO (" + nameof(DE0002) + ")";
+    /// <summary>
+    /// "meta_description" must be between 25 and 160 characters of length
+    /// </summary>
+    public const string DE0003 = "\"meta_description\" must be between 25 and 160 characters of length (" + nameof(DE0003) + ")";
     
     /// <summary>
     /// "image" is missing
