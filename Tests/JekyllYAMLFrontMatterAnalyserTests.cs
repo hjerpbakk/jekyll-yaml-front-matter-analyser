@@ -16,6 +16,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData(JekyllBasePath + "no-posts", "JE0003")]
     [InlineData(JekyllBasePath + "no-tags-dir", "JE0004")]
     [InlineData(JekyllBasePath + "date-missing", "DA0001")]
+    [InlineData(JekyllBasePath + "dates", "DA0001", "DA0002")]
     public void VerifyChecks(string arguments, params string[] expectedSubstrings) {
         Process p = new();
         p.StartInfo.UseShellExecute = false;

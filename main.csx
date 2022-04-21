@@ -43,6 +43,10 @@ foreach (var post in posts) {
 
     try {
         var frontMatter = FrontMatter.Parse(post);
+        if (frontMatter == null) {
+            verificationResults.Add(postFilename, new List<string>() { string.Format(Errors.DA0001, "") });
+            continue;
+        }
         var lastModified = frontMatter.last_modified_at.HasValue && frontMatter.last_modified_at.Value  > frontMatter.date ? frontMatter.last_modified_at.Value : frontMatter.date;
         if (lastModified > newestPost.lastModified) {
             newestPost = (postFilename, frontMatter, lastModified);
@@ -55,7 +59,7 @@ foreach (var post in posts) {
 }
 
 if (newestPost.frontMatter == null) {
-    WriteError(Errors.DA0001);
+    WriteError(string.Format(Errors.DA0001, " from the newest post"));
     WriteErrorSummary(1);
     return 1;
 }
@@ -273,9 +277,9 @@ static class Errors {
     public const string CA0002 = "When \"categories\" contains \"link\", a \"link\" with an url must exist in the front matter (" + nameof(CA0002) + ")";
     
     /// <summary>
-    /// "date" is missing from newest post
+    /// "date" is missing
     /// </summary>
-    public const string DA0001 = "\"date\" is missing from newest post (" + nameof(DA0001) + ")";
+    public const string DA0001 = "\"date\" is missing{0} (" + nameof(DA0001) + ")";
     /// <summary>
     /// "date" is in the future
     /// </summary>
