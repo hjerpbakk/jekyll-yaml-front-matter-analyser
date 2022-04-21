@@ -11,13 +11,14 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     const string JekyllBasePath = "../../../jekyll_sites/";
 
     [Theory]
+    [InlineData(JekyllBasePath + "categories", "CA0001", "CA0002")]
+    [InlineData(JekyllBasePath + "date-missing", "DA0001")]
+    [InlineData(JekyllBasePath + "dates", "DA0001", "DA0002", "DA0003")]
+    [InlineData(JekyllBasePath + "last-modified-at", "DA0004", "index.html", "archives.html")]
     [InlineData("", "JE0001")]
     [InlineData(JekyllBasePath + "no-post-dir", "JE0002")]
     [InlineData(JekyllBasePath + "no-posts", "JE0003")]
     [InlineData(JekyllBasePath + "no-tags-dir", "JE0004")]
-    [InlineData(JekyllBasePath + "date-missing", "DA0001")]
-    [InlineData(JekyllBasePath + "dates", "DA0001", "DA0002", "DA0003")]
-    [InlineData(JekyllBasePath + "last-modified-at", "DA0004", "index.html", "archives.html")]
     public void VerifyChecks(string arguments, params string[] expectedSubstrings) {
         Process p = new();
         p.StartInfo.UseShellExecute = false;
