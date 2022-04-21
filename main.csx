@@ -4,9 +4,11 @@
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
+Console.WriteLine($"Analysing posts...{Environment.NewLine}");
 if (Args.Count != 1) {
-    Console.WriteLine("Please provide the location of a Jekyll repository as an argument. Example: dotnet script main.csx -- [path_to_root_jekyll_folder]");
-    return;
+    WriteError(Errors.JE0001);
+    WriteErrorSummary(1);
+    return 1;
 }
 
 var whitelistedFiles = new string[0];
@@ -16,14 +18,20 @@ if (File.Exists(whitelistPath)) {
 }
 
 var postPath = Path.GetFullPath(Path.Combine(Args[0], "_posts"));
+if (!Directory.Exists(postPath)) {
+    WriteError(Errors.JE0002);
+    WriteErrorSummary(1);
+    return 1;
+}
+
 var posts = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(postPath, g)).ToArray();
 if (posts.Length == 0) {
-    Console.WriteLine("Could not find a single post at " + postPath);
-    return;
+    WriteError(Errors.JE0003);
+    WriteErrorSummary(1);
+    return 1;
 }
 
 var tags = GetAvailableTags();
-Console.WriteLine($"Analysing posts...{Environment.NewLine}");
 var verificationResults = new Dictionary<string, List<string>>();
 
 (string postFilename, FrontMatter frontMatter, DateTime lastModified) newestPost = (null, null, DateTime.MinValue);
@@ -46,6 +54,12 @@ foreach (var post in posts) {
     }
 }
 
+if (newestPost.frontMatter == null) {
+    WriteError(Errors.DA0001);
+    WriteErrorSummary(1);
+    return 1;
+}
+
 var lastModifiedErrors = newestPost.frontMatter.Verify(newestPost.lastModified, Args[0]);
 if (verificationResults.ContainsKey(newestPost.postFilename)) {
     verificationResults[newestPost.postFilename].AddRange(lastModifiedErrors);
@@ -54,24 +68,20 @@ if (verificationResults.ContainsKey(newestPost.postFilename)) {
 }
 
 var numberOfErrors = 0;
-var defaultColor = Console.ForegroundColor;
 foreach (var verificationResult in verificationResults) {
     if (verificationResult.Value.Count == 0) {
         continue;
     }
 
-    Console.ForegroundColor = defaultColor;
     Console.WriteLine(verificationResult.Key);
     foreach (var error in verificationResult.Value) {
         numberOfErrors++;
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(error);
+        WriteError(error);
     }
 }
 
-Console.ForegroundColor = defaultColor;
 if (numberOfErrors > 0) {
-    Console.WriteLine($"{Environment.NewLine}Found {numberOfErrors} errors 🤨");
+    WriteErrorSummary(numberOfErrors);
     return 1;
 } else {
     Console.WriteLine("No errors 😃");
@@ -80,6 +90,12 @@ if (numberOfErrors > 0) {
 
 Tag[] GetAvailableTags() {
     var tagsPath = Path.GetFullPath(Path.Combine(Args[0], "_my_tags"));
+    if (!Directory.Exists(tagsPath)) {
+        WriteError(Errors.JE0004);
+        WriteErrorSummary(1);
+        Environment.Exit(1);
+    }
+
     var availableTags = Directory.EnumerateFileSystemEntries(tagsPath)
         .Where(f => f.EndsWith("md"))
         .Select(f => ParseTag(File.ReadAllText(f)));
@@ -233,6 +249,17 @@ sealed record FrontMatter {
     }
 }
 
+void WriteError(string error) {
+    var defaultColor = Console.ForegroundColor;
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine(error);
+    Console.ForegroundColor = defaultColor;
+}
+
+void WriteErrorSummary(int numberOfErrors) {
+    Console.WriteLine($"{Environment.NewLine}Found {numberOfErrors} errors 🤨");
+}
+
 record struct Tag(string slug, string title, string hash_tag);
 
 static class Errors {
@@ -297,7 +324,7 @@ static class Errors {
     /// Could not find the tag in available tags from the subfolder `_my_tags`
     /// </summary>
     public const string TA0002 = "Could not find tag {0} in available tags from the subfolder `_my_tags` (" + nameof(TA0002) + ")";
-    
+
     /// <summary>
     /// "title" is missing
     /// </summary>
@@ -306,4 +333,21 @@ static class Errors {
     /// "title" cannot contain: `TODO`
     /// </summary>
     public const string TI0002 = "\"title\" cannot contain: TODO (" + nameof(TI0002) + ")";
+
+    /// <summary>
+    /// Path to Jekyll site not specified
+    /// </summary>
+    public const string JE0001 = "Please provide the location of a Jekyll site as an argument (" + nameof(JE0001) + "). Example: dotnet script main.csx -- [path_to_root_jekyll_folder]";
+    /// <summary>
+    /// _posts subfolder must exist
+    /// </summary>
+    public const string JE0002 = $"A subfolder named `_posts` containing posts must exist at the root of the Jekyll site ({nameof(JE0002)})";
+    /// <summary>
+    /// _posts subfolder must contain at least one post
+    /// </summary>
+    public const string JE0003 = "Could not find a single post in subfolder `_posts` (" + nameof(JE0003) + ")";
+    /// <summary>
+    /// _my_tags subfolder must exist
+    /// </summary>
+    public const string JE0004 = "A subfolder named `_my_tags` containing tags must exist (" + nameof(JE0004) + ")";
 }

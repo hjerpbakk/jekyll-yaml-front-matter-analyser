@@ -155,6 +155,13 @@ The available rules are:
 - **TI0001** "title" is missing
 - **TI0002** "title" cannot contain: `TODO`
 
+### Jekyll
+
+- **JE0001** Path to Jekyll site not specified
+- **JE0002** _posts subfolder must exist
+- **JE0003** _posts subfolder must contain at least one post
+- **JE0004** _my_tags subfolder must exist
+
 [1]: https://jekyllrb.com "Jekyll"
 [2]: https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Markdown"
 [3]: https://yaml.org "YAML"
