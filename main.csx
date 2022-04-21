@@ -273,9 +273,9 @@ static class Errors {
     public const string CA0002 = "When \"categories\" contains \"link\", a \"link\" with an url must exist in the front matter (" + nameof(CA0002) + ")";
     
     /// <summary>
-    /// "date" is missing
+    /// "date" is missing from newest post
     /// </summary>
-    public const string DA0001 = "\"date\" is missing (" + nameof(DA0001) + ")";
+    public const string DA0001 = "\"date\" is missing from newest post (" + nameof(DA0001) + ")";
     /// <summary>
     /// "date" is in the future
     /// </summary>

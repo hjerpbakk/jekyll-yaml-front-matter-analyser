@@ -125,7 +125,7 @@ The available rules are:
 
 ### Date
 
-- **DA0001** "date" is missing
+- **DA0001** "date" is missing from newest post
 - **DA0002** "date" is in the future
 - **DA0003** "last_modified_at" is in the future
 - **DA0004** "last_modified_at" in `index.html` or `archives.html` is not the same as "last_modified_at" or "date" in the newest post
