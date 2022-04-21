@@ -16,6 +16,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData(JekyllBasePath + "dates", "DA0001", "DA0002", "DA0003")]
     [InlineData(JekyllBasePath + "last-modified-at", "DA0004", "index.html", "archives.html")]
     [InlineData(JekyllBasePath + "description", "DE0001", "DE0002", "DE0003")]
+    [InlineData(JekyllBasePath + "image", "IM0001", "IM0002")]
     [InlineData("", "JE0001")]
     [InlineData(JekyllBasePath + "no-post-dir", "JE0002")]
     [InlineData(JekyllBasePath + "no-posts", "JE0003")]
