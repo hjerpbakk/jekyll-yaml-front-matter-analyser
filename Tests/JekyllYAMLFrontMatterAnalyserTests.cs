@@ -4,7 +4,6 @@ using Xunit;
 namespace Tests;
 
 public sealed class JekyllYAMLFrontMatterAnalyserTests {
-    // TODO: frontmatterignore
     const string JekyllBasePath = "../../../jekyll_sites/";
 
     [Theory]
@@ -34,6 +33,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData(JekyllBasePath + "no-tags-dir")]
     [InlineData(JekyllBasePath + "correct-site")]
     [InlineData(JekyllBasePath + "ignored-rules")]
+    [InlineData(JekyllBasePath + "frontmatterignore")]
     public void CorrectSite(string arguments) {
         var (output, errors, exitCode) = RunAnalyser(arguments);
 

@@ -50,6 +50,11 @@ foreach (var post in posts) {
         var lastModified = frontMatter.last_modified_at.HasValue && frontMatter.last_modified_at.Value  > frontMatter.date ? frontMatter.last_modified_at.Value : frontMatter.date;
         if (lastModified > newestPost.lastModified) {
             newestPost = (postFilename, frontMatter, lastModified);
+            if (newestPost.frontMatter == null) {
+                WriteError(string.Format(Errors.DA0001, " from the newest post"));
+                WriteErrorSummary(1);
+                return 1;
+            }
         }
 
         verificationResults.Add(postFilename, frontMatter.Verify(tags, Args[0]));
@@ -58,17 +63,13 @@ foreach (var post in posts) {
     }
 }
 
-if (newestPost.frontMatter == null) {
-    WriteError(string.Format(Errors.DA0001, " from the newest post"));
-    WriteErrorSummary(1);
-    return 1;
-}
-
-var lastModifiedErrors = newestPost.frontMatter.Verify(newestPost.lastModified, Args[0]);
-if (verificationResults.ContainsKey(newestPost.postFilename)) {
-    verificationResults[newestPost.postFilename].AddRange(lastModifiedErrors);
-} else {
-    verificationResults.Add(newestPost.postFilename, lastModifiedErrors);
+if (newestPost.frontMatter != null) {
+    var lastModifiedErrors = newestPost.frontMatter.Verify(newestPost.lastModified, Args[0]);
+    if (verificationResults.ContainsKey(newestPost.postFilename)) {
+        verificationResults[newestPost.postFilename].AddRange(lastModifiedErrors);
+    } else {
+        verificationResults.Add(newestPost.postFilename, lastModifiedErrors);
+    }
 }
 
 var numberOfErrors = 0;
