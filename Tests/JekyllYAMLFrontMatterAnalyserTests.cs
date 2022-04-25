@@ -5,7 +5,6 @@ namespace Tests;
 
 public sealed class JekyllYAMLFrontMatterAnalyserTests {
     // TODO: frontmatterignore
-    // TODO: Ignoring rules
     const string JekyllBasePath = "../../../jekyll_sites/";
 
     [Theory]
@@ -34,6 +33,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [Theory]
     [InlineData(JekyllBasePath + "no-tags-dir")]
     [InlineData(JekyllBasePath + "correct-site")]
+    [InlineData(JekyllBasePath + "ignored-rules")]
     public void CorrectSite(string arguments) {
         var (output, errors, exitCode) = RunAnalyser(arguments);
 
