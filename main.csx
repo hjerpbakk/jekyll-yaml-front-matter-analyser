@@ -95,9 +95,7 @@ if (numberOfErrors > 0) {
 Tag[] GetAvailableTags() {
     var tagsPath = Path.GetFullPath(Path.Combine(Args[0], "_my_tags"));
     if (!Directory.Exists(tagsPath)) {
-        WriteError(Errors.JE0004);
-        WriteErrorSummary(1);
-        Environment.Exit(1);
+        return new Tag[0];
     }
 
     var availableTags = Directory.EnumerateFileSystemEntries(tagsPath)

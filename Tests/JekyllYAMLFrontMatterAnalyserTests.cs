@@ -4,9 +4,7 @@ using Xunit;
 namespace Tests;
 
 public sealed class JekyllYAMLFrontMatterAnalyserTests {
-    // TODO: All cases
     // TODO: frontmatterignore
-    // TODO: No errors
     // TODO: Ignoring rules
     const string JekyllBasePath = "../../../jekyll_sites/";
 
@@ -23,8 +21,28 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData("", "JE0001")]
     [InlineData(JekyllBasePath + "no-post-dir", "JE0002")]
     [InlineData(JekyllBasePath + "no-posts", "JE0003")]
-    [InlineData(JekyllBasePath + "no-tags-dir", "JE0004")]
     public void VerifyChecks(string arguments, params string[] expectedSubstrings) {
+        var (output, errors, exitCode) = RunAnalyser(arguments);
+
+        Assert.Equal(1, exitCode);
+        Assert.Empty(errors);
+        foreach (var expectedSubstring in expectedSubstrings) {
+            Assert.Contains(expectedSubstring, output);
+        }
+    }
+
+    [Theory]
+    [InlineData(JekyllBasePath + "no-tags-dir")]
+    [InlineData(JekyllBasePath + "correct-site")]
+    public void CorrectSite(string arguments) {
+        var (output, errors, exitCode) = RunAnalyser(arguments);
+
+        Assert.Equal(0, exitCode);
+        Assert.Empty(errors);
+        Assert.Contains("No errors 😃", output);
+    }
+
+    static (string output, string errors, int exitCode) RunAnalyser(string arguments) {
         Process p = new();
         p.StartInfo.UseShellExecute = false;
         p.StartInfo.RedirectStandardOutput = true;
@@ -37,11 +55,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
         string output = p.StandardOutput.ReadToEnd();
         string errors = p.StandardError.ReadToEnd();
         p.WaitForExit();
-
-        Assert.Equal(1, p.ExitCode);
-        Assert.Empty(errors);
-        foreach (var expectedSubstring in expectedSubstrings) {
-            Assert.Contains(expectedSubstring, output);
-        }
+        return (output, errors, p.ExitCode);
     }
 }
+
