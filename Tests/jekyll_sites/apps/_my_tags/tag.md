@@ -1,0 +1,4 @@
+---
+slug: tag
+title: Tag
+---

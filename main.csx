@@ -42,7 +42,7 @@ foreach (var post in posts) {
     }
 
     try {
-        var frontMatter = FrontMatter.Parse(post);
+        var frontMatter = Parse<FrontMatter>(post);
         if (frontMatter == null) {
             verificationResults.Add(postFilename, new List<string>() { string.Format(Errors.DA0001, "") });
             continue;
@@ -71,6 +71,26 @@ if (newestPost.frontMatter != null) {
         verificationResults.Add(newestPost.postFilename, lastModifiedErrors);
     }
 }
+
+var appPath = Path.GetFullPath(Path.Combine(Args[0], "_apps"));
+if (Directory.Exists(appPath)) {
+    var apps = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(appPath, g)).ToArray();
+    foreach (var app in apps) {
+        var appFileName = Path.GetFileName(app);
+        try {
+            var frontMatter = Parse<AppFrontMatter>(app);
+            if (frontMatter == null) {
+                verificationResults.Add(appFileName, new List<string>() { string.Format(Errors.AP0001, "") });
+                continue;
+            }
+
+            verificationResults.Add(appFileName, frontMatter.Verify());
+        } catch (Exception exception) {
+            verificationResults.Add(appFileName, new List<string>() { exception.Message });  
+        }
+    }
+}
+
 
 var numberOfErrors = 0;
 foreach (var verificationResult in verificationResults) {
@@ -115,6 +135,40 @@ Tag ParseTag(string tagText) {
     return deserializer.Deserialize<Tag>(tagText);
 }
 
+void WriteError(string error) {
+    var defaultColor = Console.ForegroundColor;
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine(error);
+    Console.ForegroundColor = defaultColor;
+}
+
+void WriteErrorSummary(int numberOfErrors) {
+    Console.WriteLine($"{Environment.NewLine}Found {numberOfErrors} errors 🤨");
+}
+
+static T Parse<T>(string path) {
+    var frontMatterText = GetFrontMatterFromPost();
+    var deserializer = new DeserializerBuilder()
+        .WithNamingConvention(UnderscoredNamingConvention.Instance)
+        .IgnoreUnmatchedProperties()
+        .Build();
+    var frontMatter = deserializer.Deserialize<T>(frontMatterText);
+    return frontMatter;
+
+    string GetFrontMatterFromPost() {
+        var fullText = File.ReadAllText(path);
+        var indexOfFirstLineBreak = fullText.IndexOf('\n');
+        var indexOfFrontMatterEnd = fullText.IndexOf("---\n", indexOfFirstLineBreak, StringComparison.InvariantCulture);
+        if (indexOfFrontMatterEnd == -1) {
+            indexOfFrontMatterEnd = fullText.IndexOf("---", indexOfFirstLineBreak, StringComparison.InvariantCulture);
+        }
+
+        var frontMatterEnd = indexOfFrontMatterEnd + 3;
+        var frontMatterText = fullText.Substring(0, frontMatterEnd).Trim('-');
+        return frontMatterText;
+    }
+}
+
 sealed record FrontMatter {
     public string title { get; init; }
     public List<string> tags { get; init; }
@@ -127,29 +181,6 @@ sealed record FrontMatter {
     public string link { get; init; }
     public List<string> ignore { get; init; } = new List<string>();
 
-    public static FrontMatter Parse(string postPath) {
-        var frontMatterText = GetFrontMatterFromPost();
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(UnderscoredNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
-        var frontMatter = deserializer.Deserialize<FrontMatter>(frontMatterText);
-        return frontMatter;
-
-        string GetFrontMatterFromPost() {
-            var fullText = File.ReadAllText(postPath);
-            var indexOfFirstLineBreak = fullText.IndexOf('\n');
-            var indexOfFrontMatterEnd = fullText.IndexOf("---\n", indexOfFirstLineBreak, StringComparison.InvariantCulture);
-            if (indexOfFrontMatterEnd == -1) {
-                return null;
-            }
-
-            var frontMatterEnd = indexOfFrontMatterEnd + 3;
-            var frontMatterText = fullText.Substring(0, frontMatterEnd).Trim('-');
-            return frontMatterText;
-        }
-    }
-
     public List<string> Verify(DateTime lastModified, string rootPath) {
         var errors = new List<string>();
         var files = new [] { "index.html", "archives.html" };
@@ -159,7 +190,7 @@ sealed record FrontMatter {
                 continue;
             }
 
-            var frontMatter = Parse(filePath);
+            var frontMatter = Parse<FrontMatter>(filePath);
             if (frontMatter.ignore.Contains(nameof(Errors.DA0004))) {
                 continue;
             }
@@ -252,18 +283,139 @@ sealed record FrontMatter {
     }
 }
 
-void WriteError(string error) {
-    var defaultColor = Console.ForegroundColor;
-    Console.ForegroundColor = ConsoleColor.Red;
-    Console.WriteLine(error);
-    Console.ForegroundColor = defaultColor;
-}
-
-void WriteErrorSummary(int numberOfErrors) {
-    Console.WriteLine($"{Environment.NewLine}Found {numberOfErrors} errors 🤨");
-}
-
 record struct Tag(string slug, string title, string hash_tag);
+
+sealed record AppFrontMatter {
+    public string layout { get; init; }
+    public string title { get; init; }
+    public string tagline { get; init; }
+    public string slug { get; init; }
+    public int? ordering { get; init; }
+    public string meta_description { get; init; }
+    public string lang { get; init; }
+    public string platform { get; init; }
+    public string app_category { get; init; }
+    public string image { get; init; }
+    public string screenshot { get; init; }
+    public int? width { get; init; }
+    public int? height { get; init; }
+    public string app_id { get; init; }
+    public string description1 { get; init; }
+    public string description2 { get; init; }
+    public List<string> features { get; init; }
+    public DateTime? last_modified_at { get; init; }
+    public List<string> ignore { get; init; } = new List<string>();
+
+    public List<string> Verify() {
+        var errors = new List<string>();
+        // layout
+        if (string.IsNullOrEmpty(layout) || layout != "app") {
+            errors.Add(Errors.AP0003);
+        }
+
+        // last_modified_at
+        var now = DateTime.Now;
+        if (last_modified_at == null || last_modified_at == DateTime.MinValue) {
+            errors.Add(Errors.AP0001);
+        } else if (last_modified_at > now) {
+            errors.Add(Errors.AP0002);
+        }
+
+        // title
+        if (string.IsNullOrEmpty(title)) {
+            errors.Add(Errors.AP0004);
+        }
+
+        // tagline
+        if (string.IsNullOrEmpty(tagline)) {
+            errors.Add(Errors.AP0005);
+        }
+
+        // slug
+        if (string.IsNullOrEmpty(slug)) {
+            errors.Add(Errors.AP0006);
+        }
+
+        // ordering
+        if (ordering == null) {
+            errors.Add(Errors.AP0007);
+        }
+
+        // meta_description
+        if (string.IsNullOrEmpty(meta_description)) {
+            errors.Add(Errors.AP0008);
+        }
+
+        // lang
+        if (string.IsNullOrEmpty(lang)) {
+            errors.Add(Errors.AP0009);
+        }
+
+        // platform
+        if (string.IsNullOrEmpty(platform)) {
+            errors.Add(Errors.AP0010);
+        }
+
+        // app_category
+        if (string.IsNullOrEmpty(app_category)) {
+            errors.Add(Errors.AP0011);
+        }
+
+        // image
+        if (string.IsNullOrEmpty(image)) {
+            errors.Add(Errors.AP0012);
+        }
+
+        // screenshot
+        if (string.IsNullOrEmpty(screenshot)) {
+            errors.Add(Errors.AP0013);
+        }
+
+        // width
+        if (width == null) {
+            errors.Add(Errors.AP0014);
+        }
+
+        // height
+        if (height == null) {
+            errors.Add(Errors.AP0015);
+        }
+
+        // app_id
+        if (string.IsNullOrEmpty(app_id)) {
+            errors.Add(Errors.AP0016);
+        }
+
+        // description1
+        if (string.IsNullOrEmpty(description1)) {
+            errors.Add(Errors.AP0017);
+        }
+
+        // description2
+        if (string.IsNullOrEmpty(description2)) {
+            errors.Add(Errors.AP0018);
+        }
+
+        // features
+        if (features == null || features.Count == 0) {
+            errors.Add(Errors.AP0019);
+        }
+
+        if (ignore.Count > 0) {
+            foreach (var ruleToIgnore in ignore) {
+                for (int i = 0; i < errors.Count; i++) {
+                    string error = errors[i];
+                    if (error.Contains(ruleToIgnore)) {
+                        errors.Remove(error);
+                        i--;
+                    }
+                }
+            }
+        }
+
+        return errors;
+    }
+}
 
 static class Errors {
     /// <summary>
@@ -353,4 +505,81 @@ static class Errors {
     /// _my_tags subfolder must exist
     /// </summary>
     public const string JE0004 = "A subfolder named `_my_tags` containing tags must exist (" + nameof(JE0004) + ")";
+
+    /// <summary>
+    /// "last_modified_at" is missing
+    /// </summary>
+    public const string AP0001 = "\"last_modified_at\" is missing (" + nameof(AP0001) + ")";
+    /// <summary>
+    /// "last_modified_at" is in the future
+    /// </summary>
+    public const string AP0002 = "\"last_modified_at\" is in the future (" + nameof(AP0002) + ")";
+    /// <summary>
+    /// "layout" must have the value: `app`
+    /// </summary>
+    public const string AP0003 = "\"layout\" must have the value: app (" + nameof(AP0003) + ")";
+    /// <summary>
+    /// "title" is missing
+    /// </summary>
+    public const string AP0004 = "\"title\" is missing (" + nameof(AP0004) + ")";
+    /// <summary>
+    /// "tagline" is missing
+    /// </summary>
+    public const string AP0005 = "\"tagline\" is missing (" + nameof(AP0005) + ")";
+    /// <summary>
+    /// "slug" is missing
+    /// </summary>
+    public const string AP0006 = "\"slug\" is missing (" + nameof(AP0006) + ")";
+    /// <summary>
+    /// "ordering" is missing
+    /// </summary>
+    public const string AP0007 = "\"ordering\" is missing (" + nameof(AP0007) + ")";
+    /// <summary>
+    /// "meta_description" is missing
+    /// </summary>
+    public const string AP0008 = "\"meta_description\" is missing (" + nameof(AP0008) + ")";
+    /// <summary>
+    /// "lang" is missing
+    /// </summary>
+    public const string AP0009 = "\"lang\" is missing (" + nameof(AP0009) + ")";
+    /// <summary>
+    /// "platform" is missing
+    /// </summary>
+    public const string AP0010 = "\"platform\" is missing (" + nameof(AP0010) + ")";
+    /// <summary>
+    /// "app_category" is missing
+    /// </summary>
+    public const string AP0011 = "\"app_category\" is missing (" + nameof(AP0011) + ")";
+    /// <summary>
+    /// "image" is missing
+    /// </summary>
+    public const string AP0012 = "\"image\" is missing (" + nameof(AP0012) + ")";
+    /// <summary>
+    /// "screenshot" is missing
+    /// </summary>
+    public const string AP0013 = "\"screenshot\" is missing (" + nameof(AP0013) + ")";
+    /// <summary>
+    /// "width" is missing
+    /// </summary>
+    public const string AP0014 = "\"width\" is missing (" + nameof(AP0014) + ")";
+    /// <summary>
+    /// "height" is missing
+    /// </summary>
+    public const string AP0015 = "\"height\" is missing (" + nameof(AP0015) + ")";
+    /// <summary>
+    /// "app_id" is missing
+    /// </summary>
+    public const string AP0016 = "\"app_id\" is missing (" + nameof(AP0016) + ")";
+    /// <summary>
+    /// "description1" is missing
+    /// </summary>
+    public const string AP0017 = "\"description1\" is missing (" + nameof(AP0017) + ")";
+    /// <summary>
+    /// "description2" is missing
+    /// </summary>
+    public const string AP0018 = "\"description2\" is missing (" + nameof(AP0018) + ")";
+    /// <summary>
+    /// "features" is missing
+    /// </summary>
+    public const string AP0019 = "\"features\" is missing (" + nameof(AP0019) + ")";
 }

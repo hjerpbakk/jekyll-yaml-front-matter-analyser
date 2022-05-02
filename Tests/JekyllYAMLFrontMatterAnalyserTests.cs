@@ -6,6 +6,10 @@ namespace Tests;
 public sealed class JekyllYAMLFrontMatterAnalyserTests {
     const string JekyllBasePath = "../../../jekyll_sites/";
 
+    // TODO: App, index, archive dates
+    // TODO: Ignored rules
+    // TODO: White listed app
+
     [Theory]
     [InlineData(JekyllBasePath + "categories", "CA0001", "CA0002")]
     [InlineData(JekyllBasePath + "date-missing", "DA0001")]
@@ -19,6 +23,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData("", "JE0001")]
     [InlineData(JekyllBasePath + "no-post-dir", "JE0002")]
     [InlineData(JekyllBasePath + "no-posts", "JE0003")]
+    [InlineData(JekyllBasePath + "apps", "AP0001", "AP0002", "AP0003", "AP0004", "AP0005", "AP0006", "AP0007", "AP0008", "AP0009", "AP0010", "AP0011", "AP0012", "AP0013", "AP0014", "AP0015", "AP0016", "AP0017", "AP0018", "AP0019")]
     public void VerifyChecks(string arguments, params string[] expectedSubstrings) {
         var (output, errors, exitCode) = RunAnalyser(arguments);
 
@@ -37,9 +42,9 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     public void CorrectSite(string arguments) {
         var (output, errors, exitCode) = RunAnalyser(arguments);
 
+        Assert.Contains("No errors 😃", output);
         Assert.Equal(0, exitCode);
         Assert.Empty(errors);
-        Assert.Contains("No errors 😃", output);
     }
 
     static (string output, string errors, int exitCode) RunAnalyser(string arguments) {
