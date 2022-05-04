@@ -8,8 +8,8 @@ meta_description: TODO
 lang: no
 platform: iOS
 app_category: Productivity
-image: /image.png
-screenshot: /image.png
+image: /not-exist.png
+screenshot: /not-exist.png
 width: 1365
 height: 872
 app_id: id1457945957

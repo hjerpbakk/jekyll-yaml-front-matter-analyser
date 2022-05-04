@@ -84,7 +84,7 @@ if (Directory.Exists(appPath)) {
                 continue;
             }
 
-            verificationResults.Add(appFileName, frontMatter.Verify());
+            verificationResults.Add(appFileName, frontMatter.Verify(Args[0]));
         } catch (Exception exception) {
             verificationResults.Add(appFileName, new List<string>() { exception.Message });  
         }
@@ -306,7 +306,7 @@ sealed record AppFrontMatter {
     public DateTime? last_modified_at { get; init; }
     public List<string> ignore { get; init; } = new List<string>();
 
-    public List<string> Verify() {
+    public List<string> Verify(string rootPath) {
         var errors = new List<string>();
         // layout
         if (string.IsNullOrEmpty(layout) || layout != "app") {
@@ -364,11 +364,23 @@ sealed record AppFrontMatter {
         // image
         if (string.IsNullOrEmpty(image)) {
             errors.Add(Errors.AP0012);
+        } else {
+            var imagePathPart = image.Remove(0, 1);
+            var imagePath = Path.GetFullPath(Path.Combine(rootPath, imagePathPart));
+            if (!File.Exists(imagePath)) {
+                errors.Add(Errors.AP0020);
+            }
         }
 
         // screenshot
         if (string.IsNullOrEmpty(screenshot)) {
             errors.Add(Errors.AP0013);
+        } else {
+            var imagePathPart = screenshot.Remove(0, 1);
+            var imagePath = Path.GetFullPath(Path.Combine(rootPath, imagePathPart));
+            if (!File.Exists(imagePath)) {
+                errors.Add(Errors.AP0021);
+            }
         }
 
         // width
@@ -582,4 +594,12 @@ static class Errors {
     /// "features" is missing
     /// </summary>
     public const string AP0019 = "\"features\" is missing (" + nameof(AP0019) + ")";
+    /// <summary>
+    /// "image" does not exist on disk
+    /// </summary>
+    public const string AP0020 = "\"image\" does not exist on disk (" + nameof(AP0020) + ")";
+    /// <summary>
+    /// "screenshot" does not exist on disk
+    /// </summary>
+    public const string AP0021 = "\"screenshot\" does not exist on disk (" + nameof(AP0021) + ")";
 }
