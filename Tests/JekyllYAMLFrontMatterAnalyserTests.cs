@@ -5,7 +5,6 @@ namespace Tests;
 
 public sealed class JekyllYAMLFrontMatterAnalyserTests {
     const string JekyllBasePath = "../../../jekyll_sites/";
-    // TODO: App, index, archive dates
     // TODO: Ignored rules
     // TODO: White listed app
 
@@ -24,6 +23,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData(JekyllBasePath + "no-posts", "JE0003")]
     [InlineData(JekyllBasePath + "apps", "AP0001", "AP0002", "AP0003", "AP0004", "AP0005", "AP0006", "AP0007", "AP0008", "AP0009", "AP0010", "AP0011", "AP0012", "AP0013", "AP0014", "AP0015", "AP0016", "AP0017", "AP0018", "AP0019")]
     [InlineData(JekyllBasePath + "app-images", "AP0020", "AP0021")]
+    [InlineData(JekyllBasePath + "app-dates-not-updated", "AP0022")]
     public void VerifyChecks(string arguments, params string[] expectedSubstrings) {
         var (output, errors, exitCode) = RunAnalyser(arguments);
 

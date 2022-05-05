@@ -20,5 +20,5 @@ features:
 - See future birthdays sorted chronologically by upcoming birthday
 - Edit your contacts quickly from within the app
 - Remove birthdays from contacts faster than any other app
-last_modified_at: 2022-05-03T15:00:00.0000000+01:00
+last_modified_at: 2022-05-04T05:00:00.0000000+00:00
 ---

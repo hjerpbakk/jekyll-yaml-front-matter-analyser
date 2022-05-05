@@ -47,6 +47,7 @@ foreach (var post in posts) {
             verificationResults.Add(postFilename, new List<string>() { string.Format(Errors.DA0001, "") });
             continue;
         }
+
         var lastModified = frontMatter.last_modified_at.HasValue && frontMatter.last_modified_at.Value  > frontMatter.date ? frontMatter.last_modified_at.Value : frontMatter.date;
         if (lastModified > newestPost.lastModified) {
             newestPost = (postFilename, frontMatter, lastModified);
@@ -72,6 +73,7 @@ if (newestPost.frontMatter != null) {
     }
 }
 
+(string postFilename, AppFrontMatter frontMatter, DateTime lastModified) newestApp = (null, null, DateTime.MinValue);
 var appPath = Path.GetFullPath(Path.Combine(Args[0], "_apps"));
 if (Directory.Exists(appPath)) {
     var apps = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(appPath, g)).ToArray();
@@ -84,6 +86,16 @@ if (Directory.Exists(appPath)) {
                 continue;
             }
 
+            var lastModified = frontMatter.last_modified_at.Value;
+            if (lastModified > newestApp.lastModified) {
+                newestApp = (appFileName, frontMatter, lastModified);
+                if (newestApp.frontMatter == null) {
+                    WriteError(string.Format(Errors.DA0001, " from the newest post"));
+                    WriteErrorSummary(1);
+                    return 1;
+                }
+            }
+
             verificationResults.Add(appFileName, frontMatter.Verify(Args[0]));
         } catch (Exception exception) {
             verificationResults.Add(appFileName, new List<string>() { exception.Message });  
@@ -91,6 +103,14 @@ if (Directory.Exists(appPath)) {
     }
 }
 
+if (newestApp.frontMatter != null) {
+    var lastModifiedErrors = newestApp.frontMatter.Verify(newestApp.lastModified, newestPost.lastModified, Args[0]);
+    if (verificationResults.ContainsKey(newestApp.postFilename)) {
+        verificationResults[newestApp.postFilename].AddRange(lastModifiedErrors);
+    } else {
+        verificationResults.Add(newestApp.postFilename, lastModifiedErrors);
+    }
+}
 
 var numberOfErrors = 0;
 foreach (var verificationResult in verificationResults) {
@@ -305,6 +325,32 @@ sealed record AppFrontMatter {
     public List<string> features { get; init; }
     public DateTime? last_modified_at { get; init; }
     public List<string> ignore { get; init; } = new List<string>();
+    
+    public List<string> Verify(DateTime lastModified, DateTime postLastModified, string rootPath) {
+        var errors = new List<string>();
+        var files = new [] { "apps.html", "archives.html" };
+        foreach (var file in files) {
+            var filePath = Path.Combine(rootPath, file);
+            if (!File.Exists(filePath)) {
+                continue;
+            }
+
+            var frontMatter = Parse<FrontMatter>(filePath);
+            if (frontMatter.ignore.Contains(nameof(Errors.AP0022))) {
+                continue;
+            }
+
+            if (frontMatter.last_modified_at != lastModified) {
+                if (file == "archives.html" && lastModified < postLastModified) {
+                    continue;
+                }
+                
+                errors.Add(string.Format(Errors.AP0022, file));
+            }
+        }
+
+        return errors;
+    }
 
     public List<string> Verify(string rootPath) {
         var errors = new List<string>();
@@ -602,4 +648,8 @@ static class Errors {
     /// "screenshot" does not exist on disk
     /// </summary>
     public const string AP0021 = "\"screenshot\" does not exist on disk (" + nameof(AP0021) + ")";
+    /// <summary>
+    /// "last_modified_at" in `archive.html` or `apps.html` is not the same as "last_modified_at" or "date" in the newest app
+    /// </summary>
+    public const string AP0022 = "This is the newest app and \"last_modified_at\" in {0} is not the same as \"last_modified_at\" (" + nameof(AP0022) + ")";
 }
