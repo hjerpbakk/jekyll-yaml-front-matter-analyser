@@ -90,7 +90,7 @@ if (Directory.Exists(appPath)) {
             if (lastModified > newestApp.lastModified) {
                 newestApp = (appFileName, frontMatter, lastModified);
                 if (newestApp.frontMatter == null) {
-                    WriteError(string.Format(Errors.DA0001, " from the newest post"));
+                    WriteError(string.Format(Errors.AP0001, " from the newest app"));
                     WriteErrorSummary(1);
                     return 1;
                 }
@@ -210,11 +210,11 @@ sealed record FrontMatter {
                 continue;
             }
 
-            var frontMatter = Parse<FrontMatter>(filePath);
-            if (frontMatter.ignore.Contains(nameof(Errors.DA0004))) {
+            if (ignore.Contains(nameof(Errors.DA0004))) {
                 continue;
             }
 
+            var frontMatter = Parse<FrontMatter>(filePath);
             if (frontMatter.last_modified_at != lastModified) {
                 errors.Add(string.Format(Errors.DA0004, file));
             }
@@ -335,16 +335,16 @@ sealed record AppFrontMatter {
                 continue;
             }
 
-            var frontMatter = Parse<FrontMatter>(filePath);
-            if (frontMatter.ignore.Contains(nameof(Errors.AP0022))) {
+            if (ignore.Contains(nameof(Errors.AP0022))) {
                 continue;
             }
 
+            var frontMatter = Parse<FrontMatter>(filePath);
             if (frontMatter.last_modified_at != lastModified) {
                 if (file == "archives.html" && lastModified < postLastModified) {
                     continue;
                 }
-                
+
                 errors.Add(string.Format(Errors.AP0022, file));
             }
         }

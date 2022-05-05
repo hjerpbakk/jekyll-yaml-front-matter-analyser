@@ -5,7 +5,6 @@ namespace Tests;
 
 public sealed class JekyllYAMLFrontMatterAnalyserTests {
     const string JekyllBasePath = "../../../jekyll_sites/";
-    // TODO: Ignored rules
     // TODO: White listed app
 
     [Theory]
@@ -39,6 +38,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData(JekyllBasePath + "correct-site")]
     [InlineData(JekyllBasePath + "ignored-rules")]
     [InlineData(JekyllBasePath + "frontmatterignore")]
+    [InlineData(JekyllBasePath + "ignored-app-rules")]
     public void CorrectSite(string arguments) {
         var (output, errors, exitCode) = RunAnalyser(arguments);
 
