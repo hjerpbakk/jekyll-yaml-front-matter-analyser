@@ -79,6 +79,9 @@ if (Directory.Exists(appPath)) {
     var apps = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(appPath, g)).ToArray();
     foreach (var app in apps) {
         var appFileName = Path.GetFileName(app);
+        if (whitelistedFiles.Contains(appFileName)) {
+            continue;
+        }
         try {
             var frontMatter = Parse<AppFrontMatter>(app);
             if (frontMatter == null) {
