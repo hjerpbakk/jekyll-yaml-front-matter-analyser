@@ -89,16 +89,18 @@ if (Directory.Exists(appPath)) {
                 continue;
             }
 
-            var lastModified = frontMatter.last_modified_at.Value;
-            if (lastModified > newestApp.lastModified) {
-                newestApp = (appFileName, frontMatter, lastModified);
-                if (newestApp.frontMatter == null) {
-                    WriteError(string.Format(Errors.AP0001, " from the newest app"));
-                    WriteErrorSummary(1);
-                    return 1;
+            if (frontMatter.last_modified_at.HasValue) {
+                var lastModified = frontMatter.last_modified_at.Value;
+                if (lastModified > newestApp.lastModified) {
+                    newestApp = (appFileName, frontMatter, lastModified);
+                    if (newestApp.frontMatter == null) {
+                        WriteError(string.Format(Errors.AP0001, " from the newest app"));
+                        WriteErrorSummary(1);
+                        return 1;
+                    }
                 }
             }
-
+            
             verificationResults.Add(appFileName, frontMatter.Verify(Args[0]));
         } catch (Exception exception) {
             verificationResults.Add(appFileName, new List<string>() { exception.Message });  
@@ -357,6 +359,7 @@ sealed record AppFrontMatter {
 
     public List<string> Verify(string rootPath) {
         var errors = new List<string>();
+
         // layout
         if (string.IsNullOrEmpty(layout) || layout != "app") {
             errors.Add(Errors.AP0003);
@@ -373,11 +376,15 @@ sealed record AppFrontMatter {
         // title
         if (string.IsNullOrEmpty(title)) {
             errors.Add(Errors.AP0004);
+        } else if (title.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+            errors.Add(Errors.AP0023);
         }
 
         // tagline
         if (string.IsNullOrEmpty(tagline)) {
             errors.Add(Errors.AP0005);
+        } else if (tagline.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+            errors.Add(Errors.AP0023);
         }
 
         // slug
@@ -393,6 +400,10 @@ sealed record AppFrontMatter {
         // meta_description
         if (string.IsNullOrEmpty(meta_description)) {
             errors.Add(Errors.AP0008);
+        } else if (meta_description.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+            errors.Add(Errors.AP0023);
+        } else if (meta_description.Length < 25 || meta_description.Length > 160) {
+            errors.Add(Errors.AP0024);
         }
 
         // lang
@@ -450,18 +461,29 @@ sealed record AppFrontMatter {
         // description1
         if (string.IsNullOrEmpty(description1)) {
             errors.Add(Errors.AP0017);
+        } else if (description1.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+            errors.Add(Errors.AP0023);
         }
 
         // description2
         if (string.IsNullOrEmpty(description2)) {
             errors.Add(Errors.AP0018);
+        } else if (description2.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+            errors.Add(Errors.AP0023);
         }
 
         // features
         if (features == null || features.Count == 0) {
             errors.Add(Errors.AP0019);
+        } else {
+            foreach (var feature in features) {
+                if (feature.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+                    errors.Add(Errors.AP0023);
+                }
+            }
         }
 
+        // Ignored rules
         if (ignore.Count > 0) {
             foreach (var ruleToIgnore in ignore) {
                 for (int i = 0; i < errors.Count; i++) {
@@ -655,4 +677,12 @@ static class Errors {
     /// "last_modified_at" in `archive.html` or `apps.html` is not the same as "last_modified_at" or "date" in the newest app
     /// </summary>
     public const string AP0022 = "This is the newest app and \"last_modified_at\" in {0} is not the same as \"last_modified_at\" (" + nameof(AP0022) + ")";
+    /// <summary>
+    /// Front matter contains TODO
+    /// </summary>
+    public const string AP0023 = "Front matter contains TODO (" + nameof(AP0023) + ")";
+    /// <summary>
+    /// "meta_description" must be between 25 and 160 characters of length
+    /// </summary>
+    public const string AP0024 = "\"meta_description\" must be between 25 and 160 characters of length (" + nameof(AP0024) + ")";
 }

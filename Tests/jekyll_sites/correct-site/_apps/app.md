@@ -4,7 +4,7 @@ title: Birthday Reminder++
 tagline: Never forget a birthday
 slug: birthday-reminder
 ordering: 0
-meta_description: TODO
+meta_description: We’ve all got a lot of people in our contacts, some that we care more about than others. For these special someone.
 lang: no
 platform: iOS
 app_category: Productivity
