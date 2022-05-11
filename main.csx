@@ -530,6 +530,7 @@ sealed record PrivacyFrontMatter {
     public string layout { get; init; }
     public string slug { get; init; }
     public string app_title { get; init; }
+    public string meta_description { get; init; }
     public DateTime? last_modified_at { get; init; }
 
     public List<string> Verify(string rootPath, IEnumerable<(string title, string slug)> apps) {
@@ -562,6 +563,15 @@ sealed record PrivacyFrontMatter {
             errors.Add(Errors.PR0005);
         } else if (!apps.Any(app => app.slug == slug)) {
             errors.Add(Errors.PR0008);
+        }
+
+        // meta_description
+        if (string.IsNullOrEmpty(meta_description)) {
+            errors.Add(Errors.PR0009);
+        } else if (meta_description.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+            errors.Add(Errors.PR0006);
+        } else if (meta_description.Length < 25 || meta_description.Length > 160) {
+            errors.Add(Errors.PR0010);
         }
 
         return errors;
@@ -753,8 +763,6 @@ static class Errors {
     /// "meta_description" must be between 25 and 160 characters of length
     /// </summary>
     public const string AP0024 = "\"meta_description\" must be between 25 and 160 characters of length (" + nameof(AP0024) + ")";
-    
-    // TODO: meta_description in template is OK?
 
     /// <summary>
     /// "last_modified_at" is missing
@@ -788,4 +796,12 @@ static class Errors {
     /// "slug" must be found in a corresponding app
     /// </summary>
     public const string PR0008 = "\"slug\" must be found in a corresponding app (" + nameof(PR0008) + ")";
+    /// <summary>
+    /// "meta_description" is missing
+    /// </summary>
+    public const string PR0009 = "\"meta_description\" is missing (" + nameof(PR0009) + ")";
+    /// <summary>
+    /// "meta_description" must be between 25 and 160 characters of length
+    /// </summary>
+    public const string PR0010 = "\"meta_description\" must be between 25 and 160 characters of length (" + nameof(PR0010) + ")";
 }
