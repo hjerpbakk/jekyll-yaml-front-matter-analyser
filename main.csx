@@ -77,11 +77,13 @@ if (newestPost.frontMatter != null) {
 var appPath = Path.GetFullPath(Path.Combine(Args[0], "_apps"));
 if (Directory.Exists(appPath)) {
     var apps = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(appPath, g)).ToArray();
+    var appMetadata = new List<(string title, string slug)>(apps.Length);
     foreach (var app in apps) {
         var appFileName = Path.GetFileName(app);
         if (whitelistedFiles.Contains(appFileName)) {
             continue;
         }
+
         try {
             var frontMatter = Parse<AppFrontMatter>(app);
             if (frontMatter == null) {
@@ -100,32 +102,34 @@ if (Directory.Exists(appPath)) {
                     }
                 }
             }
-            
+
+            appMetadata.Add((frontMatter.title, frontMatter.slug));            
             verificationResults.Add(appFileName, frontMatter.Verify(Args[0]));
         } catch (Exception exception) {
             verificationResults.Add(appFileName, new List<string>() { exception.Message });  
         }
     }
-}
 
-var privacyPath = Path.GetFullPath(Path.Combine(Args[0], "_privacy"));
-if (Directory.Exists(privacyPath)) {
-    var privacyPolicies = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(privacyPath, g)).ToArray();
-    foreach (var privacyPolicy in privacyPolicies) {
-        var privacyPolicyFileName = Path.GetFileName(privacyPolicy);
-        if (whitelistedFiles.Contains(privacyPolicyFileName)) {
-            continue;
-        }
-        try {
-            var frontMatter = Parse<PrivacyFrontMatter>(privacyPolicy);
-            if (frontMatter == null) {
-                verificationResults.Add(privacyPolicyFileName, new List<string>() { string.Format(Errors.PR0001, "") });
+    var privacyPath = Path.GetFullPath(Path.Combine(Args[0], "_privacy"));
+    if (Directory.Exists(privacyPath)) {
+        var privacyPolicies = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(privacyPath, g)).ToArray();
+        foreach (var privacyPolicy in privacyPolicies) {
+            var privacyPolicyFileName = Path.GetFileName(privacyPolicy);
+            if (whitelistedFiles.Contains(privacyPolicyFileName)) {
                 continue;
             }
-            
-            verificationResults.Add(privacyPolicyFileName, frontMatter.Verify(Args[0]));
-        } catch (Exception exception) {
-            verificationResults.Add(privacyPolicyFileName, new List<string>() { exception.Message });  
+
+            try {
+                var frontMatter = Parse<PrivacyFrontMatter>(privacyPolicy);
+                if (frontMatter == null) {
+                    verificationResults.Add(privacyPolicyFileName, new List<string>() { string.Format(Errors.PR0001, "") });
+                    continue;
+                }
+                
+                verificationResults.Add(privacyPolicyFileName, frontMatter.Verify(Args[0], appMetadata));
+            } catch (Exception exception) {
+                verificationResults.Add(privacyPolicyFileName, new List<string>() { exception.Message });  
+            }
         }
     }
 }
@@ -528,7 +532,7 @@ sealed record PrivacyFrontMatter {
     public string app_title { get; init; }
     public DateTime? last_modified_at { get; init; }
 
-    public List<string> Verify(string rootPath) {
+    public List<string> Verify(string rootPath, IEnumerable<(string title, string slug)> apps) {
         var errors = new List<string>();
 
         // layout
@@ -549,11 +553,15 @@ sealed record PrivacyFrontMatter {
             errors.Add(Errors.PR0004);
         } else if (app_title.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
             errors.Add(Errors.PR0006);
+        } else if (!apps.Any(app => app.title == app_title)) {
+            errors.Add(Errors.PR0007);
         }
 
         // slug
         if (string.IsNullOrEmpty(slug)) {
             errors.Add(Errors.PR0005);
+        } else if (!apps.Any(app => app.slug == slug)) {
+            errors.Add(Errors.PR0008);
         }
 
         return errors;
@@ -746,7 +754,6 @@ static class Errors {
     /// </summary>
     public const string AP0024 = "\"meta_description\" must be between 25 and 160 characters of length (" + nameof(AP0024) + ")";
     
-    // TODO: Privacy policy must have corresponding app and vice versa
     // TODO: meta_description in template is OK?
 
     /// <summary>
@@ -773,4 +780,12 @@ static class Errors {
     /// Front matter contains TODO
     /// </summary>
     public const string PR0006 = "Front matter contains TODO (" + nameof(PR0006) + ")";
+    /// <summary>
+    /// "app_title" must be found in a corresponding app
+    /// </summary>
+    public const string PR0007 = "\"app_title\" must be found in a corresponding app (" + nameof(PR0007) + ")";
+    /// <summary>
+    /// "slug" must be found in a corresponding app
+    /// </summary>
+    public const string PR0008 = "\"slug\" must be found in a corresponding app (" + nameof(PR0008) + ")";
 }
