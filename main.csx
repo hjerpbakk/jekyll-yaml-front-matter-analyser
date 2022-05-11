@@ -108,6 +108,28 @@ if (Directory.Exists(appPath)) {
     }
 }
 
+var privacyPath = Path.GetFullPath(Path.Combine(Args[0], "_privacy"));
+if (Directory.Exists(privacyPath)) {
+    var privacyPolicies = "*.md;*.html".Split(';').SelectMany(g => Directory.GetFiles(privacyPath, g)).ToArray();
+    foreach (var privacyPolicy in privacyPolicies) {
+        var privacyPolicyFileName = Path.GetFileName(privacyPolicy);
+        if (whitelistedFiles.Contains(privacyPolicyFileName)) {
+            continue;
+        }
+        try {
+            var frontMatter = Parse<PrivacyFrontMatter>(privacyPolicy);
+            if (frontMatter == null) {
+                verificationResults.Add(privacyPolicyFileName, new List<string>() { string.Format(Errors.PR0001, "") });
+                continue;
+            }
+            
+            verificationResults.Add(privacyPolicyFileName, frontMatter.Verify(Args[0]));
+        } catch (Exception exception) {
+            verificationResults.Add(privacyPolicyFileName, new List<string>() { exception.Message });  
+        }
+    }
+}
+
 if (newestApp.frontMatter != null) {
     var lastModifiedErrors = newestApp.frontMatter.Verify(newestApp.lastModified, newestPost.lastModified, Args[0]);
     if (verificationResults.ContainsKey(newestApp.postFilename)) {
@@ -500,6 +522,44 @@ sealed record AppFrontMatter {
     }
 }
 
+sealed record PrivacyFrontMatter {
+    public string layout { get; init; }
+    public string slug { get; init; }
+    public string app_title { get; init; }
+    public DateTime? last_modified_at { get; init; }
+
+    public List<string> Verify(string rootPath) {
+        var errors = new List<string>();
+
+        // layout
+        if (string.IsNullOrEmpty(layout) || (layout != "privacy_policy_with_ads" && layout != "privacy_policy")) {
+            errors.Add(Errors.PR0003);
+        }
+
+        // last_modified_at
+        var now = DateTime.Now;
+        if (last_modified_at == null || last_modified_at == DateTime.MinValue) {
+            errors.Add(Errors.PR0001);
+        } else if (last_modified_at > now) {
+            errors.Add(Errors.PR0002);
+        }
+
+        // app_title
+        if (string.IsNullOrEmpty(app_title)) {
+            errors.Add(Errors.PR0004);
+        } else if (app_title.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
+            errors.Add(Errors.PR0006);
+        }
+
+        // slug
+        if (string.IsNullOrEmpty(slug)) {
+            errors.Add(Errors.PR0005);
+        }
+
+        return errors;
+    }
+}
+
 static class Errors {
     /// <summary>
     /// "categories" must contain the value: `blog`
@@ -685,4 +745,32 @@ static class Errors {
     /// "meta_description" must be between 25 and 160 characters of length
     /// </summary>
     public const string AP0024 = "\"meta_description\" must be between 25 and 160 characters of length (" + nameof(AP0024) + ")";
+    
+    // TODO: Privacy policy must have corresponding app and vice versa
+    // TODO: meta_description in template is OK?
+
+    /// <summary>
+    /// "last_modified_at" is missing
+    /// </summary>
+    public const string PR0001 = "\"last_modified_at\" is missing (" + nameof(PR0001) + ")";
+    /// <summary>
+    /// "last_modified_at" is in the future
+    /// </summary>
+    public const string PR0002 = "\"last_modified_at\" is in the future (" + nameof(PR0002) + ")";
+    /// <summary>
+    /// "layout" must have the value: `privacy_policy_with_ads` or `privacy_policy`
+    /// </summary>
+    public const string PR0003 = "\"layout\" must have the value: privacy_policy_with_ads or privacy_policy (" + nameof(PR0003) + ")";
+    /// <summary>
+    /// "app_title" is missing
+    /// </summary>
+    public const string PR0004 = "\"app_title\" is missing (" + nameof(PR0004) + ")";
+    /// <summary>
+    /// "slug" is missing
+    /// </summary>
+    public const string PR0005 = "\"slug\" is missing (" + nameof(PR0005) + ")";
+    /// <summary>
+    /// Front matter contains TODO
+    /// </summary>
+    public const string PR0006 = "Front matter contains TODO (" + nameof(PR0006) + ")";
 }
