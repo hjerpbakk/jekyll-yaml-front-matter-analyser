@@ -275,7 +275,7 @@ sealed record FrontMatter {
             errors.Add(Errors.TI0001);
         } else if (title.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
             errors.Add(Errors.TI0002);
-        } else if (title.Length < 40) {
+        } else if (title.Length < 30) {
             errors.Add(Errors.TI0003);
         } else if (title.Length > 60) {
             errors.Add(Errors.TI0004);
@@ -654,13 +654,13 @@ static class Errors {
     /// </summary>
     public const string TI0002 = "\"title\" cannot contain: TODO (" + nameof(TI0002) + ")";
     /// <summary>
-    /// "title" must be between 50 and 60 characters
+    /// "title" must be between 30 and 60 characters
     /// </summary>
-    public const string TI0003 = "\"title\" must be between 40 and 60 characters (" + nameof(TI0003) + ")";
+    public const string TI0003 = "\"title\" must be between 30 and 60 characters (" + nameof(TI0003) + ")";
     /// <summary>
-    /// "title" must be between 50 and 60 characters
+    /// "title" must be between 30 and 60 characters
     /// </summary>
-    public const string TI0004 = "\"title\" must be between 40 and 60 characters (" + nameof(TI0004) + ")";
+    public const string TI0004 = "\"title\" must be between 30 and 60 characters (" + nameof(TI0004) + ")";
 
     /// <summary>
     /// Path to Jekyll site not specified
