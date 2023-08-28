@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Xunit;
 
 namespace Tests;
@@ -15,7 +16,7 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
     [InlineData(JekyllBasePath + "image", "IM0001", "IM0002")]
     [InlineData(JekyllBasePath + "layout", "LA0001")]
     [InlineData(JekyllBasePath + "tags", "TA0001", "TA0002", "not-found")]
-    [InlineData(JekyllBasePath + "title", "TI0001", "TI0002")]
+    [InlineData(JekyllBasePath + "title", "TI0001", "TI0002", "TI0003", "TI0004")]
     [InlineData("", "JE0001")]
     [InlineData(JekyllBasePath + "no-post-dir", "JE0002")]
     [InlineData(JekyllBasePath + "no-posts", "JE0003")]
@@ -27,6 +28,10 @@ public sealed class JekyllYAMLFrontMatterAnalyserTests {
         var (output, errors, exitCode) = RunAnalyser(arguments);
 
         Assert.Equal(1, exitCode);
+        if (errors?.Length > 0) {
+            Console.WriteLine(errors);
+        }
+
         Assert.Empty(errors);
         foreach (var expectedSubstring in expectedSubstrings) {
             Assert.Contains(expectedSubstring, output);

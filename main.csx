@@ -275,6 +275,10 @@ sealed record FrontMatter {
             errors.Add(Errors.TI0001);
         } else if (title.Contains("TODO", StringComparison.InvariantCultureIgnoreCase)) {
             errors.Add(Errors.TI0002);
+        } else if (title.Length < 40) {
+            errors.Add(Errors.TI0003);
+        } else if (title.Length > 60) {
+            errors.Add(Errors.TI0004);
         }
 
         // meta_description
@@ -649,12 +653,20 @@ static class Errors {
     /// "title" cannot contain: `TODO`
     /// </summary>
     public const string TI0002 = "\"title\" cannot contain: TODO (" + nameof(TI0002) + ")";
+    /// <summary>
+    /// "title" must be between 50 and 60 characters
+    /// </summary>
+    public const string TI0003 = "\"title\" must be between 40 and 60 characters (" + nameof(TI0003) + ")";
+    /// <summary>
+    /// "title" must be between 50 and 60 characters
+    /// </summary>
+    public const string TI0004 = "\"title\" must be between 40 and 60 characters (" + nameof(TI0004) + ")";
 
     /// <summary>
     /// Path to Jekyll site not specified
     /// </summary>
     public const string JE0001 = "Please provide the location of a Jekyll site as an argument (" + nameof(JE0001) + "). Example: dotnet script main.csx -- [path_to_root_jekyll_folder]";
-    /// <summary>
+    /// <summary> d
     /// _posts subfolder must exist
     /// </summary>
     public const string JE0002 = $"A subfolder named `_posts` containing posts must exist at the root of the Jekyll site ({nameof(JE0002)})";

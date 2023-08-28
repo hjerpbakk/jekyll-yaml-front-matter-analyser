@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -e
 
- cd Tests
- dotnet test
+cd Tests
+dotnet test
