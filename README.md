@@ -154,6 +154,8 @@ The available rules are:
 
 - **TI0001** "title" is missing
 - **TI0002** "title" cannot contain: `TODO`
+- **TI0003** "title" is too short, < 30 characters
+- **TI0004** "title" is too long, > 60 characters
 
 ### Jekyll
 

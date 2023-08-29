@@ -654,13 +654,13 @@ static class Errors {
     /// </summary>
     public const string TI0002 = "\"title\" cannot contain: TODO (" + nameof(TI0002) + ")";
     /// <summary>
-    /// "title" must be between 30 and 60 characters
+    /// "title" is too short, must be between 30 and 60 characters
     /// </summary>
-    public const string TI0003 = "\"title\" must be between 30 and 60 characters (" + nameof(TI0003) + ")";
+    public const string TI0003 = "\"title\" is too short, must be between 30 and 60 characters (" + nameof(TI0003) + ")";
     /// <summary>
-    /// "title" must be between 30 and 60 characters
+    /// "title" is too long, must be between 30 and 60 characters
     /// </summary>
-    public const string TI0004 = "\"title\" must be between 30 and 60 characters (" + nameof(TI0004) + ")";
+    public const string TI0004 = "\"title\" is too long, must be between 30 and 60 characters (" + nameof(TI0004) + ")";
 
     /// <summary>
     /// Path to Jekyll site not specified
